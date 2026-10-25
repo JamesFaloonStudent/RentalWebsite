@@ -1,0 +1,21 @@
+{
+    "header" : {
+        "title" : "Artems Boating Rentals",
+        "logoPath" : "/public/images/boatLogo.png",
+        "tabBarOptions" : [
+            {
+                "type" : "boats"
+            },
+            {
+                "type" : "trailers"
+            }
+        ]
+    },
+    "subHeader" : {
+        "title" : "Boats and trailers on hand now",
+        "subtitle" : "What's typically avialable - live availability is confirmed when you request to book"
+    },
+    "boatsContent" : {
+        "title" : ""
+    }
+}

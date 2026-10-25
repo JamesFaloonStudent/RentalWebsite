@@ -1,0 +1,83 @@
+[
+    {
+        "id" : "bennington-22-ssbx",
+        "category" : "boats",
+        "name" : "2022 Bennington 22 SSBX",
+        "type" : "Pontoon",
+        "description" : "Tritoon with a bimini top and Bluetooth sound. Seats 10 guests, 22 ft.",
+        "pricePerDay" : 349,
+        "location" : "[MARINA NAME]",
+        "visible" : true,
+        "capacity" : 10,
+        "lengthFt" : 22,
+        "licence" : "[REQUIREMENT]",
+        "included" : ["Life jackets for up to 10 guests", "Bimini top and Bluetooth sound", "[FUEL POLICY]"]
+    },
+    {
+        "id" : "sea-ray-spx-190",
+        "category" : "boats",
+        "name" : "Sea Ray SPX 190",
+        "type" : "Bowrider",
+        "description" : "Easy-driving bowrider for cruising and tubing. Seats 8 guests, 19 ft.",
+        "pricePerDay" : 289,
+        "location" : "[MARINA NAME]",
+        "visible" : true,
+        "capacity" : 8,
+        "lengthFt" : 19,
+        "licence" : "[REQUIREMENT]",
+        "included" : ["[FUEL POLICY]"]
+    },
+    {
+        "id" : "lund-1875-crossover-xs",
+        "category" : "boats",
+        "name" : "Lund 1875 Crossover XS",
+        "type" : "Fishing",
+        "description" : "Deep-V fishing boat with livewell and trolling motor. Seats 6 guests, 18 ft.",
+        "pricePerDay" : 219,
+        "location" : "[MARINA NAME]",
+        "visible" : true,
+        "capacity" : 6,
+        "lengthFt" : 18,
+        "licence" : "[REQUIREMENT]",
+        "included" : ["Livewell and trolling motor", "[FUEL POLICY]"]
+    },
+    {
+        "id" : "enclosed-cargo-6x12",
+        "category" : "trailers",
+        "name" : "6×12 ft enclosed cargo trailer",
+        "type" : "Enclosed",
+        "description" : "Lockable rear ramp door and tie-downs. 7-pin connector, 2-5/16\" ball.",
+        "pricePerDay" : 79,
+        "location" : "Burlington, near Guelph Line",
+        "visible" : true,
+        "deckSize" : "6×12 ft",
+        "hitch" : "7-pin, 2-5/16\" ball",
+        "included" : ["Lockable rear ramp door", "Tie-downs"]
+    },
+    {
+        "id" : "pontoon-trailer-20-24",
+        "category" : "trailers",
+        "name" : "Pontoon boat trailer, 20–24 ft",
+        "type" : "Boat trailer",
+        "description" : "Bunk trailer with LED lights and a winch. Fits most 20–24 ft pontoons.",
+        "pricePerDay" : 59,
+        "location" : "Burlington, near Guelph Line",
+        "visible" : true,
+        "deckSize" : "20–24 ft",
+        "hitch" : "[HITCH]",
+        "included" : ["LED lights", "Winch"]
+    },
+    {
+        "id" : "utility-7x16",
+        "category" : "trailers",
+        "name" : "7×16 ft utility trailer",
+        "type" : "Open utility",
+        "description" : "Low deck with a fold-down gate for mowers, ATVs and landscaping loads.",
+        "pricePerDay" : 69,
+        "location" : "Burlington, near Guelph Line",
+        "visible" : true,
+        "deckSize" : "7×16 ft",
+        "hitch" : "[HITCH]",
+        "included" : ["Fold-down gate"]
+    }
+]

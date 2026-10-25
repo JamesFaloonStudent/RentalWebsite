@@ -1,0 +1,32 @@
+[
+    {
+        "id" : "r1", "listingId" : "bennington-22-ssbx", "category" : "boats", "tab" : "upcoming", "status" : "Confirmed",
+        "name" : "2022 Bennington 22 SSBX", "reference" : "HH-7K2Q-9041",
+        "dates" : "Sat, Oct 10 – Tue, Oct 13 · 3 days", "handoff" : "Marina pickup",
+        "total" : "$1,047", "breakdown" : "$349 × 3 days", "note" : "Free cancellation until Thu, Oct 8."
+    },
+    {
+        "id" : "r2", "listingId" : "enclosed-cargo-6x12", "category" : "trailers", "tab" : "upcoming", "status" : "Confirmed",
+        "name" : "6×12 ft enclosed cargo trailer", "reference" : "HH-3M8D-2217",
+        "dates" : "Sat, Oct 24 – Sun, Oct 25 · 1 day", "handoff" : "Delivery to [YOUR ADDRESS]",
+        "total" : "$229", "breakdown" : "$79 × 1 day + $150 delivery", "note" : "Free cancellation until Thu, Oct 22."
+    },
+    {
+        "id" : "r3", "listingId" : "pontoon-trailer-20-24", "category" : "trailers", "tab" : "active", "status" : "Out now",
+        "name" : "Pontoon boat trailer, 20–24 ft", "reference" : "HH-9T4B-5530",
+        "dates" : "Mon, Sep 28 – Thu, Oct 1 · 3 days", "handoff" : "Marina pickup",
+        "total" : "$177", "breakdown" : "$59 × 3 days", "note" : "Return by 6:00 pm, Thu, Oct 1."
+    },
+    {
+        "id" : "r4", "listingId" : "sea-ray-spx-190", "category" : "boats", "tab" : "past", "status" : "Completed",
+        "name" : "Sea Ray SPX 190", "reference" : "HH-2F6C-1184",
+        "dates" : "Sat, Aug 15 – Mon, Aug 17 · 2 days", "handoff" : "Marina pickup",
+        "total" : "$578", "breakdown" : "$289 × 2 days", "note" : ""
+    },
+    {
+        "id" : "r5", "listingId" : "lund-1875-crossover-xs", "category" : "boats", "tab" : "past", "status" : "Cancelled",
+        "name" : "Lund 1875 Crossover XS", "reference" : "HH-8P1R-0729",
+        "dates" : "Sat, Jul 4 · 1 day", "handoff" : "Marina pickup",
+        "total" : "$219", "breakdown" : "Refunded in full", "note" : ""
+    }
+]

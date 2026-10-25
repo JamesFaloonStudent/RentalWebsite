@@ -1,0 +1,21 @@
+**/bin/
+**/obj/
+**/.vs/
+**/.vscode/
+**/*.user
+.git/
+.claude/
+
+# The frontend has its own build context and Dockerfile
+RentalFrontend/
+
+# Never bake a local database (may contain real user/booking data) into the image
+**/*.db
+**/*.db-shm
+**/*.db-wal
+
+**/.env
+**/secrets.json
+Dockerfile
+docker-compose*.yml
+.dockerignore

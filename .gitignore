@@ -275,3 +275,11 @@ __pycache__/
 
 # Claude Code personal instructions
 CLAUDE.local.md
+
+# SQLite databases (may contain real user/booking data)
+*.db
+*.db-shm
+*.db-wal
+
+
+.env

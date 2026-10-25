@@ -1,0 +1,15 @@
+{
+    "header" : {
+        "title" : "Artem's Boating Rentals",
+        "logoPath" : "/img/logo.png",
+        "tagline" : "Boats and trailers, by the day.",
+        "tabBarOptions" : [
+            { "type" : "boats", "label" : "Boats" },
+            { "type" : "trailers", "label" : "Trailers" }
+        ]
+    },
+    "subHeader" : {
+        "title" : "Boats and trailers on hand now",
+        "subtitle" : "What's typically available - live availability is confirmed when you request to book."
+    }
+}

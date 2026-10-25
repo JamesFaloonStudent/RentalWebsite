@@ -1,0 +1,32 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: rentalweb:latest
+    # Not published on the host: the frontend proxies /api/* to it
+    expose:
+      - "8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__DefaultConnection: "Data Source=/app/data/rental.db"
+      # Secrets (API keys, etc.) go in a git-ignored .env file next to this one, e.g.
+      # SomeService__ApiKey: ${SOME_SERVICE_API_KEY}
+      JWT_KEY: ${JWT_KEY:?JWT_KEY must be set in .env}
+    volumes:
+      - rental-data:/app/data
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./RentalFrontend
+      dockerfile: Dockerfile
+    image: rentalfrontend:latest
+    ports:
+      - "8080:8080"
+    depends_on:
+      - web
+    restart: unless-stopped
+
+volumes:
+  rental-data:
