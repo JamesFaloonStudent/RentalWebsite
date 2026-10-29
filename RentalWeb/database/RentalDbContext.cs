@@ -1,8 +1,7 @@
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using RentalWebsite.Models;
-
-
 namespace RentalWebsite.Database;
 
 
@@ -10,13 +9,43 @@ public class RentalDbContext : IdentityDbContext<User>
 {
     public RentalDbContext(DbContextOptions<RentalDbContext> options)
         : base(options)
-    {
-    }
+    { }
 
 
-     protected override void OnModelCreating(ModelBuilder builder)
+    public DbSet<Rental> Rentals { get; set; } = null!;
+
+
+    // Fixed IDs so migrations stay stable
+    private static readonly string _adminRoleId = RequireEnv("ADMIN_ROLE_ID");
+    private static readonly string _adminUserId = RequireEnv("ADMIN_USER_ID");
+
+    private static string RequireEnv(string name) =>
+        Environment.GetEnvironmentVariable(name)
+        ?? throw new InvalidOperationException($"{name} is not set.");
+
+
+    protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
+
+
+        builder.Entity<IdentityRole>().HasData([
+            new IdentityRole
+            {
+                Id = _adminRoleId,
+                Name = "Admin",
+                NormalizedName = "ADMIN",
+                ConcurrencyStamp = "1"
+            },
+            new IdentityRole
+            {
+                Id = "2",
+                Name = "User",
+                NormalizedName = "USER",
+                ConcurrencyStamp = "2"
+            }
+        ]);
+
 
 
         // Seed values must be constants: EF compares the model on every migration, so a
@@ -24,7 +53,7 @@ public class RentalDbContext : IdentityDbContext<User>
         builder.Entity<User>().HasData([
             new User
             {
-                Id = "664fce0e-b13c-4721-aee9-137a4f72f7bb",
+                Id = _adminUserId,
                 UserName = "james.faloon@bell.net",
                 NormalizedUserName = "JAMES.FALOON@BELL.NET",
                 Email = "james.faloon@bell.net",
@@ -38,9 +67,29 @@ public class RentalDbContext : IdentityDbContext<User>
             }
         ]);
 
-       
+
+        builder.Entity<IdentityUserRole<string>>().HasData(
+            new IdentityUserRole<string> { RoleId = _adminRoleId, UserId = _adminUserId });
 
 
+        builder.Entity<Rental>().HasData(
+            new Rental
+            {
+                id = "5b1f0c3e-7a64-4d2b-9e8a-3c6f1d2a4b70",
+                imageUrl = null,
+                category = "Boat",
+                name = "Example Boat",
+                type = "Sailboat",
+                description = "This is an example sailboat for rent.",
+                pricePerDay = 100000.00f,
+                location = "Marina Bay",
+                visible = true,
+                capacity = 6,
+                lengthFt = 30,
+                licence = "AB123456",
+                included = new List<string> { "Life Jackets", "Anchor", "GPS" }
+            }
+        );
     }
 
 

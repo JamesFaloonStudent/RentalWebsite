@@ -7,6 +7,7 @@ using RentalWebsite.Services;
 
 
 
+
 // Load the .env file from the working directory or the nearest parent directory that has one
 Env.NoClobber().TraversePath().Load();
 
@@ -28,6 +29,7 @@ builder.Services.ConfigureIdentityServices();
 builder.Services.AddJwtBearer();
 
 builder.Services.AddScoped<JwtService>();
+builder.Services.AddScoped<RentalService>();
 
 builder.Services.AddControllers();
 

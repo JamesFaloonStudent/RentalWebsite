@@ -11,8 +11,8 @@ using RentalWebsite.Database;
 namespace RentalWeb.Migrations
 {
     [DbContext(typeof(RentalDbContext))]
-    [Migration("20261023033121_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20261029025743_InitalCreate")]
+    partial class InitalCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -44,6 +44,22 @@ namespace RentalWeb.Migrations
                         .HasDatabaseName("RoleNameIndex");
 
                     b.ToTable("AspNetRoles", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = "a1b2c3d4-0000-0000-0000-000000000001",
+                            ConcurrencyStamp = "1",
+                            Name = "Admin",
+                            NormalizedName = "ADMIN"
+                        },
+                        new
+                        {
+                            Id = "2",
+                            ConcurrencyStamp = "2",
+                            Name = "User",
+                            NormalizedName = "USER"
+                        });
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -127,6 +143,13 @@ namespace RentalWeb.Migrations
                     b.HasIndex("RoleId");
 
                     b.ToTable("AspNetUserRoles", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            UserId = "a1b2c3d4-0000-0000-0000-000000000002",
+                            RoleId = "a1b2c3d4-0000-0000-0000-000000000001"
+                        });
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
@@ -146,6 +169,69 @@ namespace RentalWeb.Migrations
                     b.HasKey("UserId", "LoginProvider", "Name");
 
                     b.ToTable("AspNetUserTokens", (string)null);
+                });
+
+            modelBuilder.Entity("RentalWebsite.Models.Rental", b =>
+                {
+                    b.Property<string>("id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("capacity")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("category")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("description")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("imageUrl")
+                        .HasColumnType("TEXT");
+
+                    b.PrimitiveCollection<string>("included")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("lengthFt")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("licence")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("location")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("name")
+                        .HasColumnType("TEXT");
+
+                    b.Property<float>("pricePerDay")
+                        .HasColumnType("REAL");
+
+                    b.Property<string>("type")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool?>("visible")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("id");
+
+                    b.ToTable("Rentals");
+
+                    b.HasData(
+                        new
+                        {
+                            id = "5b1f0c3e-7a64-4d2b-9e8a-3c6f1d2a4b70",
+                            capacity = 6,
+                            category = "Boat",
+                            description = "This is an example sailboat for rent.",
+                            included = "[\"Life Jackets\",\"Anchor\",\"GPS\"]",
+                            lengthFt = 30,
+                            licence = "AB123456",
+                            location = "Marina Bay",
+                            name = "Example Boat",
+                            pricePerDay = 100000f,
+                            type = "Sailboat",
+                            visible = true
+                        });
                 });
 
             modelBuilder.Entity("RentalWebsite.Models.User", b =>
@@ -217,7 +303,7 @@ namespace RentalWeb.Migrations
                     b.HasData(
                         new
                         {
-                            Id = "664fce0e-b13c-4721-aee9-137a4f72f7bb",
+                            Id = "a1b2c3d4-0000-0000-0000-000000000002",
                             AccessFailedCount = 0,
                             ConcurrencyStamp = "513f108b-5c1a-43f3-9706-386a6d257568",
                             CreatedAt = new DateTime(2026, 10, 22, 0, 0, 0, 0, DateTimeKind.Utc),
