@@ -3,6 +3,10 @@ using RentalWebsite.Database;
 using DotNetEnv;
 using RentalWebsite.Security;
 using RentalWebsite.Services;
+using Stripe;
+
+
+
 
 
 
@@ -13,10 +17,22 @@ Env.NoClobber().TraversePath().Load();
 
 
 
+
+
+
+
 var builder = WebApplication.CreateBuilder(args);
 
 
 
+
+var useMock = builder.Configuration.GetValue<bool>("STRIPE_MOCK");
+
+var client = useMock
+    ? new StripeClient(apiKey: "sk_test_123", apiBase: "http://localhost:12111")
+    : new StripeClient(apiKey: builder.Configuration["STRIPE_SECRET_KEY"]);
+
+builder.Services.AddSingleton<IStripeClient>(client);
 
 
 // Database Configuration 

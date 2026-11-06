@@ -306,3 +306,7 @@ sketch
 
 # End of https://www.toptal.com/developers/gitignore/api/react
 
+
+
+# graphify knowledge graph (generated; rebuild with `graphify update .`)
+graphify-out/

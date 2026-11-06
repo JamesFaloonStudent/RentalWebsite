@@ -20,6 +20,8 @@ import { colors, radius } from "../theme/tokens";
 import { controlSx, navLinkSx } from "../theme/styles";
 
 function Home() {
+
+    
     const { user, signOut } = useAuth();
     const [category, setCategory] = useState<Category>("boats");
     const [draft, setDraft] = useState("");
@@ -30,10 +32,14 @@ function Home() {
     const listings = getListings().filter(listing => listing.visible);
 
     const search = query.trim().toLowerCase();
+
+
+
     const results = search
         ? listings.filter(listing => listing.name.toLowerCase().includes(search))
         : listings.filter(listing => listing.category === category);
     const count = results.length;
+
 
     function pickCategory(value: Category) {
         setCategory(value);

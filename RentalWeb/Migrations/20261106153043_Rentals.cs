@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace RentalWeb.Migrations
 {
     /// <inheritdoc />
-    public partial class InitalCreate : Migration
+    public partial class Rentals : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -187,14 +187,14 @@ namespace RentalWeb.Migrations
                 columns: new[] { "Id", "ConcurrencyStamp", "Name", "NormalizedName" },
                 values: new object[,]
                 {
-                    { "2", "2", "User", "USER" },
-                    { "a1b2c3d4-0000-0000-0000-000000000001", "1", "Admin", "ADMIN" }
+                    { "00000000-0000-0000-0000-000000000001", "1", "Admin", "ADMIN" },
+                    { "2", "2", "User", "USER" }
                 });
 
             migrationBuilder.InsertData(
                 table: "AspNetUsers",
                 columns: new[] { "Id", "AccessFailedCount", "ConcurrencyStamp", "CreatedAt", "Email", "EmailConfirmed", "LockoutEnabled", "LockoutEnd", "NormalizedEmail", "NormalizedUserName", "PasswordHash", "PhoneNumber", "PhoneNumberConfirmed", "SecurityStamp", "TwoFactorEnabled", "UserName" },
-                values: new object[] { "a1b2c3d4-0000-0000-0000-000000000002", 0, "513f108b-5c1a-43f3-9706-386a6d257568", new DateTime(2026, 10, 22, 0, 0, 0, 0, DateTimeKind.Utc), "james.faloon@bell.net", true, false, null, "JAMES.FALOON@BELL.NET", "JAMES.FALOON@BELL.NET", "AQAAAAIAAYagAAAAEOgt9+QFPhPboQFqGRakYNvXGqHm9W9q8b/hqz+4uwpXC5if4iHa9KYXdWeQQSTfMA==", null, false, "44445391-1b15-4990-bff5-b2bc3f6d1a77", false, "james.faloon@bell.net" });
+                values: new object[] { "664fce0e-b13c-4721-aee9-137a4f72f7bb", 0, "513f108b-5c1a-43f3-9706-386a6d257568", new DateTime(2026, 10, 22, 0, 0, 0, 0, DateTimeKind.Utc), "james.faloon@bell.net", true, false, null, "JAMES.FALOON@BELL.NET", "JAMES.FALOON@BELL.NET", "AQAAAAIAAYagAAAAEOgt9+QFPhPboQFqGRakYNvXGqHm9W9q8b/hqz+4uwpXC5if4iHa9KYXdWeQQSTfMA==", null, false, "44445391-1b15-4990-bff5-b2bc3f6d1a77", false, "james.faloon@bell.net" });
 
             migrationBuilder.InsertData(
                 table: "Rentals",
@@ -204,7 +204,7 @@ namespace RentalWeb.Migrations
             migrationBuilder.InsertData(
                 table: "AspNetUserRoles",
                 columns: new[] { "RoleId", "UserId" },
-                values: new object[] { "a1b2c3d4-0000-0000-0000-000000000001", "a1b2c3d4-0000-0000-0000-000000000002" });
+                values: new object[] { "00000000-0000-0000-0000-000000000001", "664fce0e-b13c-4721-aee9-137a4f72f7bb" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_AspNetRoleClaims_RoleId",

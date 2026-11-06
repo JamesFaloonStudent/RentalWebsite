@@ -32,7 +32,7 @@ public class JwtService
     {
         if (string.IsNullOrEmpty(request.Email) || string.IsNullOrEmpty(request.Password))
         {
-            throw new ArgumentException("Email and password must be provided.");
+            return null;
         }
 
         var userAccount = await _userManager.FindByEmailAsync(request.Email);
@@ -41,6 +41,14 @@ public class JwtService
             return null;
         }
 
+        var role = await _userManager.GetRolesAsync(userAccount);
+
+
+
+
+
+
+       
         var issuer = _configuration["JWTConfig:Issuer"];
         var audience = _configuration["JWTConfig:Audience"];
         var tokenValidityInMinutes = _configuration.GetValue<int>("JWTConfig:TokenValidityInMinutes");
@@ -55,7 +63,8 @@ public class JwtService
             Subject = new ClaimsIdentity(
             [
                 new Claim(ClaimTypes.NameIdentifier, userAccount.Id),
-                new Claim(ClaimTypes.Email, email)
+                new Claim(ClaimTypes.Email, email),
+                new Claim(ClaimTypes.Role, role.FirstOrDefault() ?? "User")
             ]),
             Expires = tokenExpirationStamp,
             Issuer = issuer,

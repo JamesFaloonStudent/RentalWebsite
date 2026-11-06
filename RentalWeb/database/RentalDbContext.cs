@@ -13,6 +13,10 @@ public class RentalDbContext : IdentityDbContext<User>
 
 
     public DbSet<Rental> Rentals { get; set; } = null!;
+    public DbSet<Booking> Bookings { get; set; } = null!;
+    public DbSet<Payment> Payments { get; set; } = null!;
+    public DbSet<Refund> Refunds { get; set; } = null!;
+    public DbSet<StripeWebhookEvent> StripeWebhookEvents { get; set; } = null!;
 
 
     // Fixed IDs so migrations stay stable
@@ -27,6 +31,35 @@ public class RentalDbContext : IdentityDbContext<User>
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
+
+
+        builder.Entity<User>()
+            .HasIndex(u => u.StripeCustomerId)
+            .IsUnique();
+
+        builder.Entity<Booking>(b =>
+        {
+            b.Property(x => x.Status).HasConversion<string>().HasMaxLength(32);
+            b.Property(x => x.Currency).HasMaxLength(3);
+            b.HasIndex(x => new { x.RentalId, x.StartDate, x.EndDate });
+            b.HasOne(x => x.Rental).WithMany().HasForeignKey(x => x.RentalId).OnDelete(DeleteBehavior.Restrict);
+            b.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<Payment>(p =>
+        {
+            p.Property(x => x.Status).HasConversion<string>().HasMaxLength(32);
+            p.Property(x => x.Currency).HasMaxLength(3);
+            p.HasIndex(x => x.StripeCheckoutSessionId).IsUnique();
+            p.HasIndex(x => x.StripePaymentIntentId).IsUnique();
+            p.HasOne(x => x.Booking).WithMany(x => x.Payments).HasForeignKey(x => x.BookingId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<Refund>(r =>
+        {
+            r.HasIndex(x => x.StripeRefundId).IsUnique();
+            r.HasOne(x => x.Payment).WithMany(x => x.Refunds).HasForeignKey(x => x.PaymentId).OnDelete(DeleteBehavior.Restrict);
+        });
 
 
         builder.Entity<IdentityRole>().HasData([
