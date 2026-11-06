@@ -13,6 +13,8 @@ services:
       # Secrets (API keys, etc.) go in a git-ignored .env file next to this one, e.g.
       # SomeService__ApiKey: ${SOME_SERVICE_API_KEY}
       JWT_KEY: ${JWT_KEY:?JWT_KEY must be set in .env}
+      ADMIN_ROLE_ID: ${ADMIN_ROLE_ID:?ADMIN_ROLE_ID must be set in .env}
+      ADMIN_USER_ID: ${ADMIN_USER_ID:?ADMIN_USER_ID must be set in .env}
     volumes:
       - rental-data:/app/data
     restart: unless-stopped

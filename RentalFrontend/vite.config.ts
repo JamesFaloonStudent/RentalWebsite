@@ -8,11 +8,11 @@ export default defineConfig({
   plugins: [
     react(),
     babel({ presets: [reactCompilerPreset()] }),
-    
+
   ],
   // The backend's http profile owns port 5000; proxy /api to it like nginx does in Docker
   server: {
-    port: 5173,
+    port: 3000,
     proxy: {
       '/api': 'http://localhost:5000',
     },
