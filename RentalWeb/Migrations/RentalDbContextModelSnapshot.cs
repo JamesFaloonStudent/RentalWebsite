@@ -140,13 +140,6 @@ namespace RentalWeb.Migrations
                     b.HasIndex("RoleId");
 
                     b.ToTable("AspNetUserRoles", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            UserId = "664fce0e-b13c-4721-aee9-137a4f72f7bb",
-                            RoleId = "00000000-0000-0000-0000-000000000001"
-                        });
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
@@ -484,25 +477,6 @@ namespace RentalWeb.Migrations
                         .IsUnique();
 
                     b.ToTable("AspNetUsers", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            Id = "664fce0e-b13c-4721-aee9-137a4f72f7bb",
-                            AccessFailedCount = 0,
-                            ConcurrencyStamp = "513f108b-5c1a-43f3-9706-386a6d257568",
-                            CreatedAt = new DateTime(2026, 10, 22, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Email = "james.faloon@bell.net",
-                            EmailConfirmed = true,
-                            LockoutEnabled = false,
-                            NormalizedEmail = "JAMES.FALOON@BELL.NET",
-                            NormalizedUserName = "JAMES.FALOON@BELL.NET",
-                            PasswordHash = "AQAAAAIAAYagAAAAEOgt9+QFPhPboQFqGRakYNvXGqHm9W9q8b/hqz+4uwpXC5if4iHa9KYXdWeQQSTfMA==",
-                            PhoneNumberConfirmed = false,
-                            SecurityStamp = "44445391-1b15-4990-bff5-b2bc3f6d1a77",
-                            TwoFactorEnabled = false,
-                            UserName = "james.faloon@bell.net"
-                        });
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>

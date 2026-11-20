@@ -12,7 +12,10 @@ import Badge from "../components/Badge";
 import ListingForm, { ListingPreview } from "../components/ListingForm";
 import { CheckIcon } from "../components/Icons";
 import type { Listing, ListingDraft } from "../models/Listing";
-import { getListingById } from "../services/json";
+import RemoteStatus from "../components/RemoteStatus";
+import { useAuth } from "../context/auth";
+import { deleteRental, getRentalById, updateRental } from "../services/RentalService";
+import { useRemote } from "../services/useRemote";
 import { hasErrors, listingDraftErrors } from "../services/validation";
 import { colors, radius } from "../theme/tokens";
 import { stickySx, twoColumnSx } from "../theme/styles";
@@ -32,19 +35,40 @@ function toDraft(listing: Listing): ListingDraft {
     };
 }
 
+// Loads the listing, then hands it to the editor so the form state starts from the saved values
 function EditListing() {
-    const { id } = useParams();
-    const listing = getListingById(id);
-    const [draft, setDraft] = useState(() => listing && toDraft(listing));
+    const { id = "" } = useParams();
+    const remote = useRemote(getRentalById, id);
+
+    if (remote.loading || remote.error) {
+        return (
+            <>
+                <Header>
+                    <BackLink>Back to listings</BackLink>
+                </Header>
+                <PageSection component="main" sx={{ py: "64px" }}>
+                    <RemoteStatus loading={remote.loading} error={remote.error} what="this listing" />
+                </PageSection>
+            </>
+        );
+    }
+    if (!remote.data) {
+        return <Navigate to="/" replace />;
+    }
+    return <ListingEditor key={remote.data.id} initial={remote.data} />;
+}
+
+function ListingEditor({ initial }: { initial: Listing }) {
+    const { user } = useAuth();
+    const [listing, setListing] = useState(initial);
+    const [draft, setDraft] = useState(() => toDraft(initial));
+    const [saving, setSaving] = useState(false);
+    const [failure, setFailure] = useState("");
     const [submitted, setSubmitted] = useState(false);
     const [saved, setSaved] = useState(false);
     const [dirty, setDirty] = useState(false);
     const [confirmingDelete, setConfirmingDelete] = useState(false);
     const [deleted, setDeleted] = useState(false);
-
-    if (!listing || !draft) {
-        return <Navigate to="/" replace />;
-    }
 
     const errors = listingDraftErrors(draft);
     const detailsPath = `/listings/${listing.id}`;
@@ -55,12 +79,36 @@ function EditListing() {
         setSaved(false);
     }
 
-    function onSubmit(event: FormEvent) {
+    async function onSubmit(event: FormEvent) {
         event.preventDefault();
         setSubmitted(true);
-        if (!hasErrors(errors)) {
+        if (hasErrors(errors) || !user) {
+            return;
+        }
+        setSaving(true);
+        setFailure("");
+        try {
+            setListing(await updateRental(listing, draft, user.accessToken));
             setSaved(true);
             setDirty(false);
+        } catch (error) {
+            setFailure((error as Error).message);
+        } finally {
+            setSaving(false);
+        }
+    }
+
+    async function onDelete() {
+        if (!user) {
+            return;
+        }
+        setConfirmingDelete(false);
+        setFailure("");
+        try {
+            await deleteRental(listing.id, user.accessToken);
+            setDeleted(true);
+        } catch (error) {
+            setFailure((error as Error).message);
         }
     }
 
@@ -80,7 +128,7 @@ function EditListing() {
                 titleAside={draft.visible
                     ? <Badge tone="success" icon={<CheckIcon size={14} />}>Live on site</Badge>
                     : <Badge tone="neutral">Hidden</Badge>}
-                subtitle={<>Listing ID <Typography variant="code" component="span">{listing.id}</Typography> · Last updated [DATE] by [ADMIN]</>}
+                subtitle={<>Listing ID <Typography variant="code" component="span">{listing.id}</Typography> </>}
             />
 
             {deleted ? (
@@ -92,7 +140,7 @@ function EditListing() {
                         actions={
                             <>
                                 <Button component={RouterLink} to="/" variant="contained">Back to all listings</Button>
-                                <Button variant="text" onClick={() => setDeleted(false)}>Undo</Button>
+                                
                             </>
                         }
                     >
@@ -120,7 +168,9 @@ function EditListing() {
                             {saved && <Notice tone="success" compact>Changes saved. They're live on the site.</Notice>}
                             {dirty && !hasErrors(errors) && <Notice tone="warning" compact>Unsaved changes</Notice>}
                             {submitted && hasErrors(errors) && <Notice tone="danger" role="alert" compact>Check the highlighted fields and try again.</Notice>}
-                            <Button type="submit" form="edit-listing" variant="contained" size="large" fullWidth>Save changes</Button>
+                            {!user && <Notice tone="warning" compact>Sign in as an admin to save changes.</Notice>}
+                            {failure && <Notice tone="danger" role="alert" compact>{failure}</Notice>}
+                            <Button type="submit" form="edit-listing" variant="contained" size="large" fullWidth disabled={saving || !user}>{saving ? "Saving…" : "Save changes"}</Button>
                             <Button component={RouterLink} to={detailsPath} variant="text" fullWidth>Cancel</Button>
                         </Box>
                         <Box sx={{ p: "20px", border: `1px solid ${colors.dangerSoft}`, borderRadius: radius.lg, display: "flex", flexDirection: "column", gap: "12px" }}>
@@ -132,12 +182,12 @@ function EditListing() {
                                     compact
                                     actions={
                                         <>
-                                            <Button variant="contained" color="error" size="small" onClick={() => { setDeleted(true); setConfirmingDelete(false); }}>Yes, delete</Button>
+                                            <Button variant="contained" color="error" size="small" onClick={onDelete}>Yes, delete</Button>
                                             <Button variant="outlined" size="small" onClick={() => setConfirmingDelete(false)} sx={{ borderColor: colors.borderStrong, color: colors.ink }}>Keep listing</Button>
                                         </>
                                     }
                                 >
-                                    Delete this listing? This can't be undone once you leave the page.
+                                    Delete this listing? This can't be undone.
                                 </Notice>
                             ) : (
                                 <>

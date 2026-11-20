@@ -68,6 +68,9 @@ public class RentalService
                 location = rental.location,
                 visible = rental.visible,
                 capacity = rental.capacity,
+                lengthFt = rental.lengthFt,
+                licence = rental.licence,
+                included = rental.included,
                 imageUrl = rental.imageUrl
             };
             _dbContext.Rentals.Add(newRental);
@@ -81,6 +84,35 @@ public class RentalService
             Console.WriteLine($"Error creating rental: {ex.Message}");
             throw; // Rethrow the exception to be handled by the caller
         }
+    }
+
+    // Returns null when the rental doesn't exist
+    public async Task<Rental?> UpdateRental(string id, RentalInsertRequest changes)
+    {
+        var rental = await _dbContext.Rentals.FindAsync(id);
+        if (rental == null)
+        {
+            return null;
+        }
+
+        rental.name = changes.name;
+        rental.category = changes.category;
+        rental.type = changes.type;
+        rental.description = changes.description;
+        rental.pricePerDay = changes.pricePerDay;
+        rental.location = changes.location;
+        rental.visible = changes.visible;
+        rental.capacity = changes.capacity;
+        rental.lengthFt = changes.lengthFt;
+        rental.licence = changes.licence;
+        rental.included = changes.included;
+        if (changes.imageUrl != null)
+        {
+            rental.imageUrl = changes.imageUrl;
+        }
+
+        await _dbContext.SaveChangesAsync();
+        return rental;
     }
 
     public async Task<bool> DeleteRental(string id)

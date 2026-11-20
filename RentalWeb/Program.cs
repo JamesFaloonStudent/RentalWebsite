@@ -46,6 +46,8 @@ builder.Services.ConfigureIdentityServices();
 builder.Services.AddJwtBearer();
 
 builder.Services.AddScoped<JwtService>();
+builder.Services.AddScoped<IGoogleTokenVerifier, GoogleTokenVerifier>();
+builder.Services.AddScoped<SignInService>();
 builder.Services.AddScoped<RentalService>();
 
 builder.Services.AddOptions<BookingOptions>()
@@ -58,6 +60,12 @@ builder.Services.AddControllers();
 
 
 
+
+// Sign-in can't work without the Google client id, so fail at startup outside development
+if (!builder.Environment.IsDevelopment() && string.IsNullOrWhiteSpace(builder.Configuration["GOOGLE_CLIENT_ID"]))
+{
+    throw new InvalidOperationException("GOOGLE_CLIENT_ID environment variable is not set.");
+}
 
 var app = builder.Build();
 

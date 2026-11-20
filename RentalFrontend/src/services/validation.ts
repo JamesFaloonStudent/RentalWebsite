@@ -4,13 +4,6 @@ export function isValidEmail(value: string): boolean {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
 }
 
-// Mirrors the Identity password policy in RentalWeb/security/AuthenticationSetup.cs
-export const passwordRules = [
-    { text: "At least 8 characters", test: (value: string) => value.length >= 8 },
-    { text: "At least one number", test: (value: string) => /\d/.test(value) },
-    { text: "An uppercase and a lowercase letter", test: (value: string) => /[A-Z]/.test(value) && /[a-z]/.test(value) },
-];
-
 export function isWholeDollarPrice(value: string): boolean {
     const amount = Number(value);
     return value.trim() !== "" && Number.isInteger(amount) && amount > 0;

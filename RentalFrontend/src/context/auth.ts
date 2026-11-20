@@ -9,7 +9,7 @@ export interface AuthUser {
 
 export interface AuthState {
     user : AuthUser | null;
-    signIn : (email: string, password: string) => Promise<void>;
+    signIn : (googleIdToken: string) => Promise<void>;
     signOut : () => void;
 }
 

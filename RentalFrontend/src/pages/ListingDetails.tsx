@@ -11,7 +11,9 @@ import PhotoPlaceholder from "../components/PhotoPlaceholder";
 import { CategoryIcon, CheckIcon, PencilIcon } from "../components/Icons";
 import { useAuth } from "../context/auth";
 import type { Listing } from "../models/Listing";
-import { getListingById } from "../services/json";
+import RemoteStatus from "../components/RemoteStatus";
+import { getRentalById } from "../services/RentalService";
+import { useRemote } from "../services/useRemote";
 import { formatMoney, listingSummary } from "../services/format";
 import { colors, radius, shadows } from "../theme/tokens";
 import { cardSx, navLinkSx, stickySx, twoColumnSx } from "../theme/styles";
@@ -23,11 +25,25 @@ function specsFor(listing: Listing) {
 }
 
 function ListingDetails() {
-    const { id } = useParams();
+    const { id = "" } = useParams();
     const { user } = useAuth();
-    const listing = getListingById(id);
+    const remote = useRemote(getRentalById, id);
+    const listing = remote.data;
 
-    if (!listing) {
+    if (remote.loading || remote.error) {
+        return (
+            <>
+                <Header>
+                    <BackLink />
+                </Header>
+                <PageSection component="main" sx={{ py: "64px" }}>
+                    <RemoteStatus loading={remote.loading} error={remote.error} what="this rental" />
+                </PageSection>
+            </>
+        );
+    }
+    // Unknown id, or a hidden listing that only admins may open
+    if (!listing || (!listing.visible && !user?.isAdmin)) {
         return <Navigate to="/" replace />;
     }
 

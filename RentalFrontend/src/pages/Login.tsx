@@ -1,43 +1,28 @@
-import { useState, type FormEvent } from "react";
+import { useState } from "react";
 import { Link as RouterLink } from "react-router-dom";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Link from "@mui/material/Link";
 import Typography from "@mui/material/Typography";
 import AuthLayout from "../components/AuthLayout";
-import FormField from "../components/FormField";
+import GoogleSignInButton from "../components/GoogleSignInButton";
 import Notice from "../components/Notice";
-import PasswordField from "../components/PasswordField";
 import { ArrowRightIcon, BoatIcon } from "../components/Icons";
 import { useAuth } from "../context/auth";
-import { isValidEmail } from "../services/validation";
+import { googleClientId } from "../services/google";
 import { colors } from "../theme/tokens";
 import { navLinkSx } from "../theme/styles";
 
 function Login() {
     const { user, signIn } = useAuth();
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-    const [submitted, setSubmitted] = useState(false);
     const [serverError, setServerError] = useState("");
     const [busy, setBusy] = useState(false);
 
-    const emailError = submitted && !isValidEmail(email) && "Enter an email address like name@example.com.";
-    const passwordError = submitted && !password && "Enter your password.";
-
-
-    
-    async function onSubmit(event: FormEvent) {
-        event.preventDefault();
-        setSubmitted(true);
-        setServerError("");
-        if (!isValidEmail(email) || !password) {
-            return;
-        }
-
+    async function onCredential(idToken: string) {
         setBusy(true);
+        setServerError("");
         try {
-            await signIn(email.trim(), password);
+            await signIn(idToken);
         } catch (error) {
             setServerError(error instanceof Error ? error.message : "We couldn't sign you in.");
         } finally {
@@ -70,37 +55,18 @@ function Login() {
                     <Box sx={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                         <Typography variant="headingLg" component="h1">Sign in</Typography>
                         <Typography variant="body" color="text.secondary">
-                            New here? <Link component={RouterLink} to="/register" underline="always" sx={{ fontWeight: 600 }}>Create an account</Link>
+                            Use your Google account. New here? Signing in creates your account.
                         </Typography>
                     </Box>
 
-                    <Box component="form" noValidate onSubmit={onSubmit} sx={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-                        {(serverError || (submitted && (emailError || passwordError))) && (
-                            <Notice tone="danger" role="alert" compact>
-                                {serverError || "Check the highlighted fields and try again."}
-                            </Notice>
+                    <Box sx={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+                        {serverError && <Notice tone="danger" role="alert" compact>{serverError}</Notice>}
+                        {googleClientId ? (
+                            <GoogleSignInButton onCredential={onCredential} onError={setServerError} />
+                        ) : (
+                            <Notice tone="warning" role="alert" compact>Google sign-in isn't set up yet. Ask the site owner to finish the setup.</Notice>
                         )}
-                        <FormField
-                            id="login-email"
-                            label="Email"
-                            type="email"
-                            autoComplete="email"
-                            placeholder="you@example.com"
-                            value={email}
-                            onChange={event => setEmail(event.target.value)}
-                            error={emailError}
-                        />
-                        <PasswordField
-                            id="login-password"
-                            label="Password"
-                            autoComplete="current-password"
-                            value={password}
-                            onChange={setPassword}
-                            error={passwordError}
-                        />
-                        <Button type="submit" variant="contained" size="large" disabled={busy}>
-                            {busy ? "Signing in…" : "Sign in"}
-                        </Button>
+                        {busy && <Typography variant="bodySm" color="text.secondary" role="status">Signing you in…</Typography>}
                     </Box>
 
                     <Box sx={{ pt: "24px", borderTop: `1px solid ${colors.border}`, display: "flex", flexDirection: "column", alignItems: "center", gap: "4px", textAlign: "center" }}>

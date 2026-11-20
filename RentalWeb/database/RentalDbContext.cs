@@ -21,7 +21,6 @@ public class RentalDbContext : IdentityDbContext<User>
 
     // Fixed IDs so migrations stay stable
     private static readonly string _adminRoleId = RequireEnv("ADMIN_ROLE_ID");
-    private static readonly string _adminUserId = RequireEnv("ADMIN_USER_ID");
 
     private static string RequireEnv(string name) =>
         Environment.GetEnvironmentVariable(name)
@@ -81,28 +80,8 @@ public class RentalDbContext : IdentityDbContext<User>
 
 
 
-        // Seed values must be constants: EF compares the model on every migration, so a
-        // freshly generated hash, stamp or date would register as a pending change.
-        builder.Entity<User>().HasData([
-            new User
-            {
-                Id = _adminUserId,
-                UserName = "james.faloon@bell.net",
-                NormalizedUserName = "JAMES.FALOON@BELL.NET",
-                Email = "james.faloon@bell.net",
-                NormalizedEmail = "JAMES.FALOON@BELL.NET",
-                EmailConfirmed = true,
-                // Identity v3 hash of "password123"
-                PasswordHash = "AQAAAAIAAYagAAAAEOgt9+QFPhPboQFqGRakYNvXGqHm9W9q8b/hqz+4uwpXC5if4iHa9KYXdWeQQSTfMA==",
-                SecurityStamp = "44445391-1b15-4990-bff5-b2bc3f6d1a77",
-                ConcurrencyStamp = "513f108b-5c1a-43f3-9706-386a6d257568",
-                CreatedAt = new DateTime(2026, 10, 22, 0, 0, 0, DateTimeKind.Utc),
-            }
-        ]);
-
-
-        builder.Entity<IdentityUserRole<string>>().HasData(
-            new IdentityUserRole<string> { RoleId = _adminRoleId, UserId = _adminUserId });
+        // No users are seeded: people sign in with Google (SignInService) and admins are chosen by
+        // the ADMIN_EMAILS environment variable, so no credentials live in the repository.
 
 
         builder.Entity<Rental>().HasData(

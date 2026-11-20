@@ -14,7 +14,9 @@ services:
       # SomeService__ApiKey: ${SOME_SERVICE_API_KEY}
       JWT_KEY: ${JWT_KEY:?JWT_KEY must be set in .env}
       ADMIN_ROLE_ID: ${ADMIN_ROLE_ID:?ADMIN_ROLE_ID must be set in .env}
-      ADMIN_USER_ID: ${ADMIN_USER_ID:?ADMIN_USER_ID must be set in .env}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:?GOOGLE_CLIENT_ID must be set in .env}
+      # Comma-separated Google emails that get the Admin role when they sign in
+      ADMIN_EMAILS: ${ADMIN_EMAILS:?ADMIN_EMAILS must be set in .env}
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:?STRIPE_SECRET_KEY must be set in .env}
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:?STRIPE_WEBHOOK_SECRET must be set in .env}
       APP_BASE_URL: ${APP_BASE_URL:?APP_BASE_URL must be set in .env}
@@ -26,6 +28,9 @@ services:
     build:
       context: ./RentalFrontend
       dockerfile: Dockerfile
+      args:
+        # Public value, same client id the backend checks tokens against
+        VITE_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:?GOOGLE_CLIENT_ID must be set in .env}
     image: rentalfrontend:latest
     ports:
       - "8080:8080"

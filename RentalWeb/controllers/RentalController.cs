@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using RentalWebsite.Services;
 using RentalWebsite.Models;
 
@@ -77,6 +78,26 @@ public class RentalController : ControllerBase
         }
     }
 
+    [HttpPut("{id}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult<Rental>> UpdateRental(string id, RentalInsertRequest rental)
+    {
+        try
+        {
+            var updated = await _rentalService.UpdateRental(id, rental);
+            if (updated == null)
+            {
+                return NotFound();
+            }
+            return Ok(updated);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error updating rental: {ex.Message}");
+            return StatusCode(500, "An error occurred while updating the rental.");
+        }
+    }
+
     [HttpDelete("{id}")]
     [Authorize(Roles = "Admin")]
     public async Task<ActionResult<bool>> DeleteRental(string id)
@@ -89,6 +110,11 @@ public class RentalController : ControllerBase
                 return NotFound();
             }
             return Ok(result);
+        }
+        catch (DbUpdateException)
+        {
+            // Bookings still reference this rental (foreign key is Restrict)
+            return Conflict("This rental has bookings and can't be deleted. Hide it instead.");
         }
         catch (Exception ex)
         {

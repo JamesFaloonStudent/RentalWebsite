@@ -32,6 +32,54 @@ public sealed class RentalAuthorizationTests : IAsyncLifetime
         return _host.Client.SendAsync(request);
     }
 
+    // ---- real sign-in: Google token -> our JWT -> admin routes ----
+
+    private async Task<string> SignInWithGoogle(string email)
+    {
+        _host.Google.Accept($"google-{email}", $"sub-{email}", email);
+        var response = await _host.Client.PostAsJsonAsync("/api/auth/google", new GoogleSignInRequest($"google-{email}"));
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        return (await response.Content.ReadFromJsonAsync<LoginResponse>())!.AccessToken;
+    }
+
+    [Fact]
+    public async Task A_google_admin_can_create_rentals_with_the_token_they_get_from_sign_in()
+    {
+        var token = await SignInWithGoogle(RentalApiHost.AdminEmail);
+
+        var response = await Send(HttpMethod.Post, "/api/rental", token, NewRental());
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task A_google_customer_cannot_create_rentals()
+    {
+        var token = await SignInWithGoogle("customer@example.test");
+
+        var response = await Send(HttpMethod.Post, "/api/rental", token, NewRental());
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Theory]
+    [InlineData("not-a-google-token")]
+    [InlineData("")]
+    public async Task Invalid_google_tokens_get_401(string idToken)
+    {
+        var response = await _host.Client.PostAsJsonAsync("/api/auth/google", new GoogleSignInRequest(idToken));
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task The_old_password_login_route_is_gone()
+    {
+        var response = await _host.Client.PostAsJsonAsync("/api/auth/login", new { email = "a@b.test", password = "x" });
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
     private static string AdminToken => RentalApiHost.TokenFor("admin-1", "Admin");
     private static string UserToken => RentalApiHost.TokenFor("user-1", "User");
 
@@ -70,6 +118,67 @@ public sealed class RentalAuthorizationTests : IAsyncLifetime
         var created = await response.Content.ReadFromJsonAsync<Rental>();
         Assert.NotNull(created);
         Assert.True(_host.RentalExists(created.id));
+    }
+
+    // ---- PUT ----
+
+    [Fact]
+    public async Task Put_without_a_token_returns_401_and_changes_nothing()
+    {
+        _host.SeedRental("boat-1");
+
+        var response = await Send(HttpMethod.Put, "/api/rental/boat-1", null, NewRental() with { name = "Renamed" });
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.Equal("Test Boat", _host.RentalName("boat-1"));
+    }
+
+    [Fact]
+    public async Task Put_as_a_non_admin_returns_403_and_changes_nothing()
+    {
+        _host.SeedRental("boat-1");
+
+        var response = await Send(HttpMethod.Put, "/api/rental/boat-1", UserToken, NewRental() with { name = "Renamed" });
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        Assert.Equal("Test Boat", _host.RentalName("boat-1"));
+    }
+
+    [Fact]
+    public async Task Put_as_an_admin_updates_the_rental()
+    {
+        _host.SeedRental("boat-1");
+
+        var response = await Send(HttpMethod.Put, "/api/rental/boat-1", AdminToken, NewRental() with { name = "Renamed", lengthFt = 24, licence = "PCOC" });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("Renamed", _host.RentalName("boat-1"));
+        var updated = await response.Content.ReadFromJsonAsync<Rental>();
+        Assert.Equal(24, updated!.lengthFt);
+        Assert.Equal("PCOC", updated.licence);
+    }
+
+    [Fact]
+    public async Task Put_of_a_missing_rental_as_an_admin_returns_404()
+    {
+        var response = await Send(HttpMethod.Put, "/api/rental/nope", AdminToken, NewRental());
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    // ---- POST keeps every field ----
+
+    [Fact]
+    public async Task Post_as_an_admin_saves_length_licence_and_included()
+    {
+        var request = NewRental() with { lengthFt = 22, licence = "PCOC", included = ["Life jackets"] };
+
+        var response = await Send(HttpMethod.Post, "/api/rental", AdminToken, request);
+
+        var created = await response.Content.ReadFromJsonAsync<Rental>();
+        Assert.Equal(22, created!.lengthFt);
+        Assert.Equal("PCOC", created.licence);
+        Assert.Equal(["Life jackets"], created.included);
     }
 
     // ---- DELETE ----

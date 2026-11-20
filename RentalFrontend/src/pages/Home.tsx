@@ -14,7 +14,10 @@ import ListingCard from "../components/ListingCard";
 import { CategoryIcon, PlusIcon, SearchIcon } from "../components/Icons";
 import { useAuth } from "../context/auth";
 import type { Category } from "../models/Listing";
-import { getHeaderDataJsonFile, getListings, getSubHeaderDataJsonFile } from "../services/json";
+import RemoteStatus from "../components/RemoteStatus";
+import { getHeaderDataJsonFile, getSubHeaderDataJsonFile } from "../services/json";
+import { getAllRentals } from "../services/RentalService";
+import { useRemote } from "../services/useRemote";
 import { formatMoney } from "../services/format";
 import { colors, radius } from "../theme/tokens";
 import { controlSx, navLinkSx } from "../theme/styles";
@@ -29,7 +32,8 @@ function Home() {
 
     const headerData = getHeaderDataJsonFile();
     const subHeader = getSubHeaderDataJsonFile();
-    const listings = getListings().filter(listing => listing.visible);
+    const remote = useRemote(getAllRentals, undefined);
+    const listings = (remote.data ?? []).filter(listing => listing.visible);
 
     const search = query.trim().toLowerCase();
 
@@ -115,7 +119,9 @@ function Home() {
                     </Box>
                 </Box>
 
-                {search && count === 0 && (
+                <RemoteStatus loading={remote.loading} error={remote.error} what="rentals" />
+
+                {search && count === 0 && remote.data && (
                     <Box sx={{ p: "48px", border: `1px dashed ${colors.borderStrong}`, borderRadius: radius.lg, background: colors.surfaceAlt, textAlign: "center", display: "flex", flexDirection: "column", gap: "8px" }}>
                         <Typography variant="headingSm" component="p">No rentals match that name</Typography>
                         <Typography variant="bodySm" color="text.secondary">Check the spelling, or browse all boats and trailers.</Typography>

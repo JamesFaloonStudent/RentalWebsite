@@ -30,17 +30,24 @@ public sealed class RentalApiHost : IAsyncDisposable
     private const string Issuer = "http://localhost:8080";
     private const string Audience = "http://localhost:8080";
 
+    // Signing in with this Google email gets the Admin role
+    public const string AdminEmail = "boss@example.test";
+
     private readonly SqliteConnection _connection;
     private readonly WebApplication _app;
 
-    private RentalApiHost(SqliteConnection connection, WebApplication app, HttpClient client)
+    private RentalApiHost(SqliteConnection connection, WebApplication app, HttpClient client, FakeGoogleTokenVerifier google)
     {
         _connection = connection;
         _app = app;
         Client = client;
+        Google = google;
     }
 
     public HttpClient Client { get; }
+
+    // Tokens registered here are accepted by POST /api/auth/google
+    public FakeGoogleTokenVerifier Google { get; }
 
     public static async Task<RentalApiHost> StartAsync()
     {
@@ -48,11 +55,20 @@ public sealed class RentalApiHost : IAsyncDisposable
         connection.Open();
 
         var builder = WebApplication.CreateBuilder();
+        builder.Configuration["JWTConfig:Issuer"] = Issuer;
+        builder.Configuration["JWTConfig:Audience"] = Audience;
+        builder.Configuration["JWTConfig:TokenValidityInMinutes"] = "5";
+        builder.Configuration["ADMIN_EMAILS"] = AdminEmail;
         builder.WebHost.UseUrls("http://127.0.0.1:0");
         builder.Logging.ClearProviders();
 
         builder.Services.AddDbContext<RentalDbContext>(options => options.UseSqlite(connection));
+        builder.Services.ConfigureIdentityServices();
         builder.Services.AddJwtBearer();
+        var google = new FakeGoogleTokenVerifier();
+        builder.Services.AddSingleton<IGoogleTokenVerifier>(google);
+        builder.Services.AddScoped<JwtService>();
+        builder.Services.AddScoped<SignInService>();
         builder.Services.AddScoped<RentalService>();
         builder.Services.AddControllers().AddApplicationPart(typeof(RentalController).Assembly);
 
@@ -68,7 +84,7 @@ public sealed class RentalApiHost : IAsyncDisposable
         await app.StartAsync();
 
         var client = new HttpClient { BaseAddress = new Uri(app.Urls.First()) };
-        return new RentalApiHost(connection, app, client);
+        return new RentalApiHost(connection, app, client, google);
     }
 
     public void SeedRental(string id)
@@ -83,6 +99,12 @@ public sealed class RentalApiHost : IAsyncDisposable
     {
         using var scope = _app.Services.CreateScope();
         return scope.ServiceProvider.GetRequiredService<RentalDbContext>().Rentals.Any(r => r.id == id);
+    }
+
+    public string? RentalName(string id)
+    {
+        using var scope = _app.Services.CreateScope();
+        return scope.ServiceProvider.GetRequiredService<RentalDbContext>().Rentals.AsNoTracking().Single(r => r.id == id).name;
     }
 
     // Signed the same way JwtService signs login tokens

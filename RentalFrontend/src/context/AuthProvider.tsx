@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { AuthContext, type AuthUser } from "./auth";
-import { login, tokenHasRole } from "../services/auth";
+import { signInWithGoogle, tokenHasRole } from "../services/auth";
 
 // The access token lives in memory only (never localStorage), so a page refresh signs the user out
 export default function AuthProvider({ children }: { children: ReactNode }) {
@@ -14,8 +14,8 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
         return () => clearTimeout(timeout);
     }, [user]);
 
-    async function signIn(email: string, password: string) {
-        const response = await login(email, password);
+    async function signIn(googleIdToken: string) {
+        const response = await signInWithGoogle(googleIdToken);
         setUser({
             email: response.email,
             accessToken: response.accessToken,

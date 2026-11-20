@@ -232,6 +232,22 @@ public sealed class CreateCheckoutTests : IDisposable
     // ---- Stripe failure ----
 
     [Fact]
+    public async Task Unreachable_stripe_releases_the_dates_and_reports_upstream_error()
+    {
+        _t.Stripe.UnreachablePathContaining = "/v1/checkout/sessions";
+
+        var ex = await Assert.ThrowsAsync<PaymentException>(() => Checkout(1, 3));
+        Assert.Equal(PaymentErrorKind.Upstream, ex.Kind);
+
+        using var db = _t.NewDb();
+        Assert.Equal(BookingStatus.Expired, Assert.Single(db.Bookings).Status);
+
+        // The same dates can be booked again straight away once Stripe is back.
+        _t.Stripe.UnreachablePathContaining = null;
+        await Checkout(1, 3);
+    }
+
+    [Fact]
     public async Task Stripe_failure_releases_the_dates_and_reports_upstream_error()
     {
         _t.Stripe.FailPathContaining = "/v1/checkout/sessions";

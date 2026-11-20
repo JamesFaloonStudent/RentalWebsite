@@ -9,7 +9,9 @@ import PageBand from "../components/PageBand";
 import PageSection from "../components/PageSection";
 import Notice from "../components/Notice";
 import ListingForm, { ListingPreview } from "../components/ListingForm";
+import { useAuth } from "../context/auth";
 import type { ListingDraft } from "../models/Listing";
+import { createRental } from "../services/RentalService";
 import { formatMoney } from "../services/format";
 import { hasErrors, listingDraftErrors } from "../services/validation";
 import { stickySx, twoColumnSx } from "../theme/styles";
@@ -23,13 +25,26 @@ function AddListing() {
     const [draft, setDraft] = useState(emptyDraft);
     const [submitted, setSubmitted] = useState(false);
     const [published, setPublished] = useState(false);
+    const [saving, setSaving] = useState(false);
+    const [failure, setFailure] = useState("");
+    const { user } = useAuth();
     const errors = listingDraftErrors(draft);
 
-    function onSubmit(event: FormEvent) {
+    async function onSubmit(event: FormEvent) {
         event.preventDefault();
         setSubmitted(true);
-        if (!hasErrors(errors)) {
+        if (hasErrors(errors) || !user) {
+            return;
+        }
+        setSaving(true);
+        setFailure("");
+        try {
+            await createRental(draft, user.accessToken);
             setPublished(true);
+        } catch (error) {
+            setFailure((error as Error).message);
+        } finally {
+            setSaving(false);
         }
     }
 
@@ -90,8 +105,10 @@ function AddListing() {
                             {submitted && hasErrors(errors) && (
                                 <Notice tone="danger" role="alert" compact>Check the highlighted fields and try again.</Notice>
                             )}
-                            <Button type="submit" form="new-listing" variant="contained" size="large" fullWidth>
-                                {draft.visible ? "Publish listing" : "Save as hidden"}
+                            {!user && <Notice tone="warning" compact>Sign in as an admin to add listings.</Notice>}
+                            {failure && <Notice tone="danger" role="alert" compact>{failure}</Notice>}
+                            <Button type="submit" form="new-listing" variant="contained" size="large" fullWidth disabled={saving || !user}>
+                                {saving ? "Saving…" : draft.visible ? "Publish listing" : "Save as hidden"}
                             </Button>
                             <Button component={RouterLink} to="/" variant="text" fullWidth>Cancel</Button>
                         </Box>

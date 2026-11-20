@@ -142,9 +142,11 @@ public partial class StripeService(
 
             return new CheckoutResponse(booking.Id, session.Url);
         }
-        catch (StripeException ex)
+        catch (Exception ex) when (ex is StripeException or HttpRequestException)
         {
             // Free the dates immediately instead of waiting for the hold to lapse.
+            // HttpRequestException is Stripe being unreachable (no connection, DNS, TLS), which
+            // Stripe.net doesn't wrap in a StripeException.
             booking.Status = BookingStatus.Expired;
             booking.UpdatedAt = DateTime.UtcNow;
             await db.SaveChangesAsync(CancellationToken.None);
@@ -565,9 +567,9 @@ public partial class StripeService(
         return url.TrimEnd('/');
     }
 
-    private PaymentException Upstream(StripeException ex, string operation)
+    private PaymentException Upstream(Exception ex, string operation)
     {
-        LogStripeFailure(ex, operation, ex.StripeError?.Message);
+        LogStripeFailure(ex, operation, (ex as StripeException)?.StripeError?.Message);
         return new PaymentException(PaymentErrorKind.Upstream, "The payment provider is unavailable. Please try again.");
     }
 

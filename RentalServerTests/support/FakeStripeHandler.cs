@@ -41,6 +41,9 @@ public sealed class FakeStripeHandler : HttpMessageHandler
     // Any request whose path contains this text gets a Stripe-style 400 error.
     public string? FailPathContaining { get; set; }
 
+    // Any request whose path contains this text fails like an unreachable server (connection refused).
+    public string? UnreachablePathContaining { get; set; }
+
     public IEnumerable<RecordedRequest> RequestsTo(HttpMethod method, string pathContains) =>
         Requests.Where(r => r.Method == method && r.Path.Contains(pathContains, StringComparison.Ordinal));
 
@@ -87,6 +90,11 @@ public sealed class FakeStripeHandler : HttpMessageHandler
         var path = request.RequestUri!.AbsolutePath;
         string? key = request.Headers.TryGetValues("Idempotency-Key", out var values) ? values.First() : null;
         Requests.Add(new RecordedRequest(request.Method, path, form, key));
+
+        if (UnreachablePathContaining is not null && path.Contains(UnreachablePathContaining, StringComparison.Ordinal))
+        {
+            throw new HttpRequestException("Connection refused");
+        }
 
         if (FailPathContaining is not null && path.Contains(FailPathContaining, StringComparison.Ordinal))
         {

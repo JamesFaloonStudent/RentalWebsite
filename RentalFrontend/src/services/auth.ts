@@ -5,15 +5,16 @@ export interface LoginResponse {
     expiresIn : number;
 }
 
-export async function login(email: string, password: string): Promise<LoginResponse> {
-    const response = await fetch("/api/auth/login", {
+// Exchanges the Google ID token for this app's access token (POST /api/auth/google)
+export async function signInWithGoogle(idToken: string): Promise<LoginResponse> {
+    const response = await fetch("/api/auth/google", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ idToken }),
     });
 
     if (response.status === 401) {
-        throw new Error("That email and password don't match an account.");
+        throw new Error("Google sign-in didn't work. Try again.");
     }
     if (!response.ok) {
         throw new Error("We couldn't sign you in right now. Try again in a moment.");

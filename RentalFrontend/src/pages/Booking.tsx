@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Navigate, useParams } from "react-router-dom";
+import { Link as RouterLink, Navigate, useParams } from "react-router-dom";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import ButtonBase from "@mui/material/ButtonBase";
@@ -13,13 +13,16 @@ import ChipGroup from "../components/ChipGroup";
 import ChoiceCard from "../components/ChoiceCard";
 import Notice from "../components/Notice";
 import PhotoPlaceholder from "../components/PhotoPlaceholder";
-import { CalendarIcon, CategoryIcon, CheckIcon } from "../components/Icons";
-import { getListingById } from "../services/json";
+import { CalendarIcon, CategoryIcon } from "../components/Icons";
+import RemoteStatus from "../components/RemoteStatus";
+import { useAuth } from "../context/auth";
+import { createCheckout } from "../services/StripeService";
+import { getRentalById } from "../services/RentalService";
+import { useRemote } from "../services/useRemote";
 import { formatMoney, listingSummary, pluralDays } from "../services/format";
 import { colors, radius, shadows, typeScale } from "../theme/tokens";
 import { cardSx, controlBorder, stickySx, twoColumnSx } from "../theme/styles";
 
-const DELIVERY_FEE = 150;
 const MAX_DAYS = 14;
 const DAY_MS = 86_400_000;
 
@@ -44,27 +47,57 @@ function tomorrow() {
 }
 
 function Booking() {
-    const { id } = useParams();
-    const listing = getListingById(id);
+    const { id = "" } = useParams();
+    const { user } = useAuth();
+    const remote = useRemote(getRentalById, id);
+    const listing = remote.data;
     const [start, setStart] = useState(tomorrow);
     const [days, setDays] = useState(3);
     const [handoff, setHandoff] = useState<"pickup" | "deliver">("pickup");
-    const [confirmed, setConfirmed] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
+    const [error, setError] = useState("");
 
-    if (!listing) {
+    if (remote.loading || remote.error) {
+        return (
+            <>
+                <Header>
+                    <BackLink />
+                </Header>
+                <PageSection component="main" sx={{ py: "64px" }}>
+                    <RemoteStatus loading={remote.loading} error={remote.error} what="this rental" />
+                </PageSection>
+            </>
+        );
+    }
+    if (!listing || !listing.visible) {
         return <Navigate to="/" replace />;
     }
 
     const startDate = parseDate(start);
     const endDate = startDate ? new Date(startDate.getTime() + days * DAY_MS) : null;
     const subtotal = listing.pricePerDay * days;
-    const fee = handoff === "deliver" ? DELIVERY_FEE : 0;
-    const total = formatMoney(subtotal + fee);
+    const total = formatMoney(subtotal);
     const noun = listing.category === "boats" ? "boat" : "trailer";
 
     function update(change: () => void) {
         change();
-        setConfirmed(false);
+        setError("");
+    }
+
+    // The server prices the booking and creates the Stripe Checkout session; the browser just follows the link
+    async function pay() {
+        if (!user || !startDate || !endDate) {
+            return;
+        }
+        setSubmitting(true);
+        setError("");
+        try {
+            const checkout = await createCheckout(listing!.id, start, endDate.toISOString().slice(0, 10), user.accessToken);
+            window.location.assign(checkout.url);
+        } catch (failure) {
+            setError((failure as Error).message);
+            setSubmitting(false);
+        }
     }
 
     return (
@@ -120,7 +153,7 @@ function Booking() {
                                 onChange={() => update(() => setHandoff("deliver"))}
                                 title={`Deliver the ${noun} to me`}
                                 description="We drop it off at your launch or dock and collect it after."
-                                detail={`+ ${formatMoney(DELIVERY_FEE)} delivery`}
+                                detail="Fee quoted after booking"
                             />
                         </Box>
                         {handoff === "deliver" && (
@@ -129,18 +162,16 @@ function Booking() {
                                 label="Delivery address"
                                 autoComplete="street-address"
                                 placeholder="Street, city, or marina and slip number"
-                                helper="Delivery area and fee to be confirmed: [DELIVERY RADIUS]"
+                                helper="We'll confirm the delivery area and fee with you after you book: [DELIVERY RADIUS]"
                             />
                         )}
                     </SectionCard>
 
                     <SectionCard title="3. Payment">
-                        <FormField id="card-name" label="Name on card" autoComplete="cc-name" />
-                        <FormField id="card-num" label="Card number" autoComplete="cc-number" placeholder="1234 1234 1234 1234" inputProps={{ inputMode: "numeric" }} />
-                        <Box sx={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "24px" }}>
-                            <FormField id="card-exp" label="Expiry" autoComplete="cc-exp" placeholder="MM / YY" />
-                            <FormField id="card-cvc" label="Security code" autoComplete="cc-csc" placeholder="CVC" inputProps={{ inputMode: "numeric" }} />
-                        </Box>
+                        <Typography variant="body">
+                            You'll enter your card on Stripe's secure payment page, so card details never touch our site.
+                            Your dates are held for a short time while you pay.
+                        </Typography>
                     </SectionCard>
                 </Box>
 
@@ -157,28 +188,19 @@ function Booking() {
                         </Box>
                         <Box component="dl" sx={{ ...typeScale.body, m: 0, display: "flex", flexDirection: "column", gap: "8px" }}>
                             <SummaryRow term={`${formatMoney(listing.pricePerDay)} × ${pluralDays(days)}`} value={formatMoney(subtotal)} />
-                            <SummaryRow term={handoff === "deliver" ? "Delivery" : "Pickup"} value={fee ? formatMoney(fee) : "Free"} />
+                            <SummaryRow term={handoff === "deliver" ? "Delivery" : "Pickup"} value={handoff === "deliver" ? "Quoted later" : "Free"} />
                             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", pt: "12px", borderTop: `1px solid ${colors.border}` }}>
                                 <Box component="dt" sx={{ fontWeight: 600 }}>Total</Box>
                                 <Box component="dd" sx={{ ...typeScale.price, m: 0 }}>{total}</Box>
                             </Box>
                         </Box>
-                        {confirmed ? (
-                            <Notice tone="success" sx={{ p: "16px", flexDirection: "row", alignItems: "flex-start" }}>
-                                <Box sx={{ display: "flex", gap: "12px", color: colors.success }}>
-                                    <Box component="span" sx={{ mt: "2px" }}><CheckIcon size={20} strokeWidth={1.75} /></Box>
-                                    <Box sx={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                                        <Typography variant="body" component="strong" sx={{ fontWeight: 700 }}>Booking confirmed</Typography>
-                                        <Typography variant="bodySm" component="span" sx={{ color: colors.ink }}>
-                                            Reference <Typography variant="code" component="span">HH-0000-0000</Typography>
-                                        </Typography>
-                                    </Box>
-                                </Box>
-                            </Notice>
-                        ) : (
-                            <Button variant="contained" size="large" fullWidth disabled={!startDate} onClick={() => setConfirmed(true)}>
-                                Pay {total} and reserve
+                        {error && <Notice tone="danger" role="alert" compact>{error}</Notice>}
+                        {user ? (
+                            <Button variant="contained" size="large" fullWidth disabled={!startDate || submitting} onClick={pay}>
+                                {submitting ? "Taking you to Stripe…" : `Pay ${total} and reserve`}
                             </Button>
+                        ) : (
+                            <Button component={RouterLink} to="/login" variant="contained" size="large" fullWidth>Sign in to book</Button>
                         )}
                         <Typography variant="bodySm" color="text.secondary" sx={{ textAlign: "center" }}>Free cancellation until 48 hours before pickup.</Typography>
                     </Box>

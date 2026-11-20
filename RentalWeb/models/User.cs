@@ -12,7 +12,8 @@ public class User : IdentityUser
 }
 
 
-public record LoginRequest(string Email, string Password);
+// The Google ID token (a JWT) from the "Sign in with Google" button
+public record GoogleSignInRequest(string IdToken);
 
 
 public record LoginResponse(string Email, string AccessToken, int ExpiresIn);

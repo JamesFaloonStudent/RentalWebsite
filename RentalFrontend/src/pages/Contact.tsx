@@ -14,7 +14,8 @@ import FormField from "../components/FormField";
 import ChipGroup from "../components/ChipGroup";
 import Notice from "../components/Notice";
 import { ClockIcon, MailIcon, PhoneIcon, PinIcon } from "../components/Icons";
-import { getListings } from "../services/json";
+import { getAllRentals } from "../services/RentalService";
+import { useRemote } from "../services/useRemote";
 import { isValidEmail } from "../services/validation";
 import { colors, radius, typeScale } from "../theme/tokens";
 import { controlSx, raisedCardSx, stickySx, twoColumnSx } from "../theme/styles";
@@ -47,6 +48,7 @@ const helpTopics = [
 ];
 
 function Contact() {
+    const listings = useRemote(getAllRentals, undefined);
     const [type, setType] = useState<RequestType | null>(null);
     const [message, setMessage] = useState("");
     const [name, setName] = useState("");
@@ -114,7 +116,7 @@ function Contact() {
                                     <Typography component="label" htmlFor="contact-item" variant="label">Boat or trailer (optional)</Typography>
                                     <NativeSelect id="contact-item" disableUnderline defaultValue="" sx={{ ...controlSx(), "& select": { py: 0, height: 46 } }}>
                                         <option value="">Not sure yet</option>
-                                        {getListings().map(listing => <option key={listing.id} value={listing.id}>{listing.name}</option>)}
+                                        {(listings.data ?? []).map(listing => <option key={listing.id} value={listing.id}>{listing.name}</option>)}
                                     </NativeSelect>
                                 </Box>
                                 <FormField id="contact-date" label="Preferred start date (optional)" type="date" />
