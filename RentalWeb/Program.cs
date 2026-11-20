@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using RentalWebsite.Database;
 using DotNetEnv;
+using RentalWebsite.Models;
 using RentalWebsite.Security;
 using RentalWebsite.Services;
 using Stripe;
@@ -46,6 +47,12 @@ builder.Services.AddJwtBearer();
 
 builder.Services.AddScoped<JwtService>();
 builder.Services.AddScoped<RentalService>();
+
+builder.Services.AddOptions<BookingOptions>()
+    .Bind(builder.Configuration.GetSection(BookingOptions.SectionName))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+builder.Services.AddScoped<StripeService>();
 
 builder.Services.AddControllers();
 

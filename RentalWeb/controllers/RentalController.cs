@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RentalWebsite.Services;
 using RentalWebsite.Models;
@@ -60,6 +61,7 @@ public class RentalController : ControllerBase
 
 
     [HttpPost]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<Rental>> CreateRental(RentalInsertRequest rental)
     {
         try
@@ -76,6 +78,7 @@ public class RentalController : ControllerBase
     }
 
     [HttpDelete("{id}")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<bool>> DeleteRental(string id)
     {
         try
