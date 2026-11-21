@@ -4,7 +4,7 @@ import { formatCents, pluralDays } from "./format";
 import { toCategory } from "./RentalService";
 
 // Matches RentalWeb's BookingSummaryResponse record. Dates are "yyyy-MM-dd", money is in cents.
-interface ApiBooking {
+export interface ApiBooking {
     bookingId : string;
     rentalId : string;
     rentalName : string | null;
@@ -44,7 +44,7 @@ function dayKey(date: Date): string {
     return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 }
 
-function statusAndTab(booking: ApiBooking, now: Date): { status: RentalStatus; tab: RentalTab } {
+export function statusAndTab(booking: ApiBooking, now: Date): { status: RentalStatus; tab: RentalTab } {
     const today = dayKey(now);
     switch (booking.status) {
         case "PendingPayment":
@@ -65,7 +65,7 @@ function statusAndTab(booking: ApiBooking, now: Date): { status: RentalStatus; t
     }
 }
 
-function noteFor(booking: ApiBooking, status: RentalStatus): string {
+export function noteFor(booking: ApiBooking, status: RentalStatus): string {
     const refunded = booking.payment?.amountRefundedCents ?? 0;
     switch (status) {
         case "Awaiting payment":
@@ -82,7 +82,7 @@ function noteFor(booking: ApiBooking, status: RentalStatus): string {
     }
 }
 
-function toRental(booking: ApiBooking, now: Date): Rental {
+export function toRental(booking: ApiBooking, now: Date): Rental {
     const { status, tab } = statusAndTab(booking, now);
     const id = booking.bookingId.replace(/-/g, "").toUpperCase();
     return {
