@@ -1,3 +1,5 @@
+import { apiRequest } from "./api";
+
 // Matches RentalWeb's CheckoutResponse record
 export interface CheckoutResponse {
     bookingId : string;
@@ -21,4 +23,39 @@ export async function createCheckout(rentalId: string, startDate: string, endDat
         throw new Error(body?.message ?? "We couldn't start your payment right now. Try again in a moment.");
     }
     return response.json() as Promise<CheckoutResponse>;
+}
+
+// Matches RentalWeb's CancellationQuote record
+export interface CancellationQuote {
+    bookingId : string;
+    paidCents : number;
+    feeCents : number;
+    refundCents : number;
+    lateCancellation : boolean;
+    cancellationWindowDays : number;
+    feePercent : number;
+    currency : string;
+}
+
+// Matches RentalWeb's CancelBookingResponse record
+export interface CancelBookingResponse {
+    bookingId : string;
+    status : string;
+    feeCents : number;
+    refundCents : number;
+}
+
+// What cancelling a paid booking would cost right now. The server works out the fee and refund.
+export function getCancelQuote(bookingId: string, accessToken: string): Promise<CancellationQuote> {
+    return apiRequest<CancellationQuote>(`/api/stripe/bookings/${encodeURIComponent(bookingId)}/cancel-quote`, accessToken, "We couldn't work out the refund right now. Try again in a moment.");
+}
+
+// Cancels a paid booking and refunds it according to the cancellation policy
+export function cancelBooking(bookingId: string, accessToken: string): Promise<CancelBookingResponse> {
+    return apiRequest<CancelBookingResponse>(`/api/stripe/bookings/${encodeURIComponent(bookingId)}/cancel`, accessToken, "We couldn't cancel this booking right now. Try again in a moment.", "POST");
+}
+
+// Abandons a booking whose payment was never completed
+export function cancelPendingBooking(bookingId: string, accessToken: string): Promise<CancelBookingResponse> {
+    return apiRequest<CancelBookingResponse>(`/api/stripe/bookings/${encodeURIComponent(bookingId)}/cancel-pending`, accessToken, "We couldn't cancel this booking right now. Try again in a moment.", "POST");
 }

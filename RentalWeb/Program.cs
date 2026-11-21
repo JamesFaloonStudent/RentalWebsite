@@ -55,6 +55,7 @@ builder.Services.AddOptions<BookingOptions>()
     .ValidateDataAnnotations()
     .ValidateOnStart();
 builder.Services.AddScoped<StripeService>();
+builder.Services.AddScoped<BookingService>();
 
 builder.Services.AddControllers();
 

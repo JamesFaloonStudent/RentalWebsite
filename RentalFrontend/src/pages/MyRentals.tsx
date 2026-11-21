@@ -12,10 +12,13 @@ import PageSection from "../components/PageSection";
 import Badge, { type BadgeTone } from "../components/Badge";
 import Notice from "../components/Notice";
 import PhotoPlaceholder from "../components/PhotoPlaceholder";
-import { CalendarIcon, CategoryIcon, PinIcon } from "../components/Icons";
+import { CalendarIcon, CategoryIcon } from "../components/Icons";
 import { useAuth } from "../context/auth";
 import type { Rental, RentalStatus, RentalTab } from "../models/Rental";
-import { getMyRentals } from "../services/json";
+import { getMyRentals } from "../services/BookingService";
+import { cancelBooking, cancelPendingBooking, getCancelQuote, type CancelBookingResponse, type CancellationQuote } from "../services/StripeService";
+import { formatCents } from "../services/format";
+import { useRemote } from "../services/useRemote";
 import { colors, radius, typeScale } from "../theme/tokens";
 import { navLinkSx, raisedCardSx } from "../theme/styles";
 
@@ -26,21 +29,82 @@ const tabs: { value: RentalTab; label: string; empty: string }[] = [
 ];
 
 const statusTone: Record<RentalStatus, BadgeTone> = {
+    "Awaiting payment": "warning",
     "Confirmed": "success",
     "Out now": "brand",
     "Completed": "neutral",
     "Cancelled": "danger",
+    "Refunded": "neutral",
+    "Expired": "neutral",
 };
+
+// What the user should be told about cancelling, from the server's own quote
+function quoteMessage(quote: CancellationQuote): string {
+    if (quote.lateCancellation) {
+        return `This booking starts within ${quote.cancellationWindowDays} days, so a ${quote.feePercent}% fee (${formatCents(quote.feeCents, quote.currency)}) is kept. You'll be refunded ${formatCents(quote.refundCents, quote.currency)}.`;
+    }
+    return `You'll get a full refund of ${formatCents(quote.refundCents, quote.currency)}.`;
+}
 
 function MyRentals() {
     const { user, signOut } = useAuth();
     const [tab, setTab] = useState<RentalTab>("upcoming");
-    const [cancelledIds, setCancelledIds] = useState<string[]>([]);
+    const { data, error, loading } = useRemote(getMyRentals, user?.accessToken ?? null);
+    const [cancelled, setCancelled] = useState<Record<string, CancelBookingResponse>>({});
     const [confirmingId, setConfirmingId] = useState<string | null>(null);
+    const [quote, setQuote] = useState<CancellationQuote | null>(null);
+    const [busy, setBusy] = useState(false);
+    const [actionError, setActionError] = useState<string | null>(null);
 
-    const rentals: Rental[] = getMyRentals().map(rental => cancelledIds.includes(rental.id)
-        ? { ...rental, tab: "past", status: "Cancelled", breakdown: "Refund on its way", note: "Cancelled just now. Refunds take 5–10 business days." }
-        : rental);
+    // Bookings cancelled in this visit show their new state without a reload
+    const rentals: Rental[] = (data ?? []).map(rental => {
+        const result = cancelled[rental.id];
+        if (!result) {
+            return rental;
+        }
+        return {
+            ...rental,
+            tab: "past",
+            status: result.status === "Refunded" ? "Refunded" : "Cancelled",
+            note: result.refundCents > 0 ? "Refund on its way. Refunds take 5–10 business days." : "",
+        };
+    });
+
+    function closeConfirm() {
+        setConfirmingId(null);
+        setQuote(null);
+        setActionError(null);
+    }
+
+    // Unpaid bookings have nothing to refund; paid ones ask the server what cancelling costs first
+    async function startCancel(rental: Rental) {
+        if (!user) return;
+        setConfirmingId(rental.id);
+        setQuote(null);
+        setActionError(null);
+        if (rental.status === "Awaiting payment") return;
+        try {
+            setQuote(await getCancelQuote(rental.id, user.accessToken));
+        } catch (e) {
+            setActionError((e as Error).message);
+        }
+    }
+
+    async function confirmCancel(rental: Rental) {
+        if (!user) return;
+        setBusy(true);
+        setActionError(null);
+        try {
+            const cancel = rental.status === "Awaiting payment" ? cancelPendingBooking : cancelBooking;
+            const result = await cancel(rental.id, user.accessToken);
+            setCancelled({ ...cancelled, [rental.id]: result });
+            closeConfirm();
+        } catch (e) {
+            setActionError((e as Error).message);
+        } finally {
+            setBusy(false);
+        }
+    }
     const rows = rentals.filter(rental => rental.tab === tab);
     const current = tabs.find(t => t.value === tab)!;
 
@@ -76,7 +140,7 @@ function MyRentals() {
                                 key={t.value}
                                 role="tab"
                                 aria-selected={selected}
-                                onClick={() => { setTab(t.value); setConfirmingId(null); }}
+                                onClick={() => { setTab(t.value); closeConfirm(); }}
                                 sx={{
                                     ...typeScale.body,
                                     fontWeight: 600,
@@ -98,7 +162,15 @@ function MyRentals() {
             </PageBand>
 
             <PageSection component="main" sx={{ pt: "40px", pb: "64px", display: "flex", flexDirection: "column", gap: "16px" }}>
-                {rows.length === 0 && (
+                {!user && (
+                    <Notice tone="info" title="Sign in to see your rentals" actions={<Button component={RouterLink} to="/login" variant="contained">Sign in</Button>}>
+                        Your bookings are tied to your Google account.
+                    </Notice>
+                )}
+                {user && loading && <Typography variant="body" color="text.secondary">Loading your rentals…</Typography>}
+                {user && error && <Notice tone="danger" role="alert">{error}</Notice>}
+
+                {user && !loading && !error && rows.length === 0 && (
                     <Box sx={{ p: "48px", border: `1px dashed ${colors.borderStrong}`, borderRadius: radius.lg, background: colors.surfaceAlt, display: "flex", flexDirection: "column", alignItems: "center", gap: "12px", textAlign: "center" }}>
                         <Typography variant="headingSm" component="p">{current.empty}</Typography>
                         <Button component={RouterLink} to="/" variant="contained">Find a rental</Button>
@@ -126,7 +198,6 @@ function MyRentals() {
                             </Typography>
                             <Box sx={{ ...typeScale.bodySm, display: "flex", flexWrap: "wrap", gap: "8px 24px", color: colors.inkMuted }}>
                                 <Box component="span" sx={{ display: "inline-flex", alignItems: "center", gap: "8px" }}><CalendarIcon size={16} />{rental.dates}</Box>
-                                <Box component="span" sx={{ display: "inline-flex", alignItems: "center", gap: "8px" }}><PinIcon size={16} />{rental.handoff}</Box>
                             </Box>
                             {rental.note && (
                                 <Typography variant="bodySm" sx={rental.status === "Out now" ? { color: colors.warning, fontWeight: 600 } : { color: colors.inkMuted }}>
@@ -145,15 +216,19 @@ function MyRentals() {
                                                 variant="contained"
                                                 color="error"
                                                 size="small"
-                                                onClick={() => { setCancelledIds([...cancelledIds, rental.id]); setConfirmingId(null); }}
+                                                disabled={busy || (!quote && rental.status !== "Awaiting payment")}
+                                                onClick={() => confirmCancel(rental)}
                                             >
                                                 Yes, cancel
                                             </Button>
-                                            <Button variant="outlined" size="small" onClick={() => setConfirmingId(null)} sx={{ borderColor: colors.borderStrong, color: colors.ink }}>Keep booking</Button>
+                                            <Button variant="outlined" size="small" onClick={closeConfirm} disabled={busy} sx={{ borderColor: colors.borderStrong, color: colors.ink }}>Keep booking</Button>
                                         </>
                                     }
                                 >
-                                    Cancel this booking? You'll get a full refund.
+                                    {actionError
+                                        ?? (rental.status === "Awaiting payment"
+                                            ? "Cancel this unpaid booking? The dates will be released."
+                                            : quote ? `Cancel this booking? ${quoteMessage(quote)}` : "Checking what you'd get back…")}
                                 </Notice>
                             )}
                         </Box>
@@ -165,7 +240,7 @@ function MyRentals() {
                             </Box>
                             <Box sx={{ display: "flex", flexDirection: "column", gap: "8px", width: "100%" }}>
                                 {rental.tab === "upcoming" && confirmingId !== rental.id && (
-                                    <Button variant="text" color="error" size="small" onClick={() => setConfirmingId(rental.id)}>Cancel booking</Button>
+                                    <Button variant="text" color="error" size="small" onClick={() => startCancel(rental)}>Cancel booking</Button>
                                 )}
                                 {rental.tab === "past" && (
                                     <Button component={RouterLink} to={`/listings/${rental.listingId}/book`} variant="outlined" size="small">Book again</Button>

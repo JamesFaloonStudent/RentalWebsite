@@ -1,5 +1,6 @@
 using RentalServerTests.Support;
 using RentalWebsite.Models;
+using RentalWebsite.Services;
 
 namespace RentalServerTests.Integration;
 
@@ -72,6 +73,24 @@ public sealed class AccessControlJourneyTests : ApiHarness
 
         var payment = Ok<PaymentResponse>(await GetPayment(Alice, _paymentId));
         Assert.Equal("Refunded", payment.Status);
+    }
+
+    [Fact]
+    public async Task A_customers_booking_list_never_includes_someone_elses_booking()
+    {
+        await BookAndPay();
+
+        var bobsList = await new BookingService(T.NewDb()).ListMineAsync(Bob, default);
+        var alicesList = await new BookingService(T.NewDb()).ListMineAsync(Alice, default);
+
+        Assert.Empty(bobsList);
+        var mine = Assert.Single(alicesList);
+        Assert.Equal(_bookingId, mine.BookingId);
+        Assert.Equal("Confirmed", mine.Status);
+
+        // Reading it directly by id is just as closed to Bob, and open to an admin.
+        await Assert.ThrowsAsync<PaymentException>(() => new BookingService(T.NewDb()).GetAsync(Bob, false, _bookingId, default));
+        Assert.Equal(_bookingId, (await new BookingService(T.NewDb()).GetAsync("staff", true, _bookingId, default)).BookingId);
     }
 
     [Fact]

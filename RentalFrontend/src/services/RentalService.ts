@@ -36,7 +36,7 @@ interface RentalInsertRequest {
 const RENTAL_URL = "/api/rental";
 
 // The API stores the category as free text ("Boat"), the UI uses "boats" / "trailers"
-function toCategory(value: string | null): Category {
+export function toCategory(value: string | null): Category {
     return value?.toLowerCase().startsWith("trailer") ? "trailers" : "boats";
 }
 

@@ -545,10 +545,10 @@ public partial class StripeService(
 
     private async Task<Booking> LoadBookingAsync(string userId, bool isAdmin, string bookingId, CancellationToken ct)
     {
-        var booking = await db.Bookings.Include(b => b.Payments)
+        var booking = await db.Bookings.VisibleTo(userId, isAdmin).Include(b => b.Payments)
             .FirstOrDefaultAsync(b => b.Id == bookingId, ct);
 
-        if (booking is null || (!isAdmin && booking.UserId != userId))
+        if (booking is null)
         {
             throw new PaymentException(PaymentErrorKind.NotFound, "Booking not found.");
         }
